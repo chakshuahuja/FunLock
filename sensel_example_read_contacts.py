@@ -28,17 +28,26 @@
 
 from __future__ import print_function
 from keyboard_reader import *
-import sensel
+import sensel, json
 
 exit_requested = False;
 
 def keypress_handler(ch):
     global exit_requested
+    global FORCEMAP
 
+    # print('FORCEMAP', FORCEMAP)
+    # print(json.dumps(FORCEMAP), file=open('forcemap.data', 'w'))
+    # os.system("plot.py forcemap.data")
+    if chr(ch) == 'p':
+        print('FORCEMAP', FORCEMAP)
+        print(json.dumps(FORCEMAP), file=open('forcemap.data', 'w'))
+#        lockScreen()
+    if chr(ch) == '~':
+        FORCEMAP.clear()
     if ch == 0x51 or ch == 0x71: #'Q' or 'q'
         print("Exiting Example...", end="\r\n");
         exit_requested = True;
-
 
 def openSensorReadContacts():
     sensel_device = sensel.SenselDevice()
