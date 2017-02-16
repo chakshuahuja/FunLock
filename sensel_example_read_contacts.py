@@ -104,8 +104,18 @@ def keypress_handler(ch):
         exit_requested = True;
 
 def openSensorReadContacts():
-    sensel_device = sensel.SenselDevice()
+    KEYMAP_RAW = [x.split() for x in open('keymap.txt').read().split('\n')]
+    KEYMAP = {}
+    for key in KEYMAP_RAW:
+        if not key:
+            continue
+        x, y, w, h, name = key
+        name = name.strip('//')
+        KEYMAP[name] = {'x': float(x), 'y': float(y), 'w': float(w.strip('f')), 'h': float(h.strip('f'))}
 
+    print('KEYMAP')
+    print(KEYMAP)
+    sensel_device = sensel.SenselDevice()
     if not sensel_device.openConnection():
         print("Unable to open Sensel sensor!", end="\r\n")
         exit()
@@ -114,24 +124,23 @@ def openSensorReadContacts():
 
     #Enable contact sending
     sensel_device.setFrameContentControl(sensel.SENSEL_FRAME_CONTACTS_FLAG)
-  
     #Enable scanning
     sensel_device.startScanning()
 
     print("\r\nTouch sensor! (press 'q' to quit)...", end="\r\n")
-
-    while not exit_requested: 
+    global last_updated_time
+    while not exit_requested:
         frame = sensel_device.readFrame()
         if frame:
             (lost_frame_count, forces, labels, contacts) = frame
-  
+
             if len(contacts) == 0:
                 continue
-       
+
             for c in contacts:
                 event = ""
                 if c.type == sensel.SENSEL_EVENT_CONTACT_INVALID:
-                    event = "invalid"; 
+                    event = "invalid";
                 elif c.type == sensel.SENSEL_EVENT_CONTACT_START:
                     sensel_device.setLEDBrightness(c.id, 100) #Turn on LED
                     event = "start"
@@ -142,12 +151,34 @@ def openSensorReadContacts():
                     event = "end";
                 else:
                     event = "error";
-        
-                print("Contact ID %d, event=%s, mm coord: (%f, %f), force=%.3f, " 
-                      "major=%f, minor=%f, orientation=%f" % 
-                      (c.id, event, c.x_pos, c.y_pos, c.total_force, 
-                       c.major_axis, c.minor_axis, c.orientation), end="\r\n")
 
+                print("Contact ID %d, event=%s, mm coord: (%f, %f), force=%.3f, "
+                      "major=%f, minor=%f, orientation=%f" %
+                      (c.id, event, c.x_pos, c.y_pos, c.total_force,
+                       c.major_axis, c.minor_axis, c.orientation), end="\r\n")
+                try:
+                    keyname, key = contactToKey(c, KEYMAP)
+                    if keyname == 'Delete':
+                        continue
+                    print(time.time(), 'KEY:', keyname, key, c.total_force)
+                    FORCEMAP[keyname].append(c.total_force)
+                    time_now = time.time()
+                    if ((time_now - last_updated_time) >= 3):
+                        print('FORCEMAP', FORCEMAP)
+                        last_updated_time = time_now
+                        # print(json.dumps(FORCEMAP), file=open('test.data', 'w'))
+                        print('***************************************************************')
+                        comp = compare('chakshu.datatrain', FORCEMAP)
+                        if (comp < 0.6):
+                            lockScreen()
+                        else:
+                            print('CONTINUEING')
+
+
+                    print
+                    # print(json.dumps(FORCEMAP), file=open('forcemap.data', 'w'))
+                except Exception as e:
+                    print("error", e)
             if len(contacts) > 0:
                 print("****", end="\r\n");
 
