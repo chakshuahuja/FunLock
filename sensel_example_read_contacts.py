@@ -32,6 +32,10 @@ import sensel, json
 
 exit_requested = False;
 
+def lockScreen():
+    loginPF = CDLL('/System/Library/PrivateFrameworks/login.framework/Versions/Current/login')
+    result = loginPF.SACLockScreenImmediate()
+
 def keypress_handler(ch):
     global exit_requested
     global FORCEMAP
