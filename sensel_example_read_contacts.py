@@ -32,6 +32,13 @@ import sensel, json
 
 exit_requested = False;
 
+def contactToKey(c, KEYMAP):
+    for name, key in KEYMAP.items():
+        if key['x'] <= c.x_pos <= key['x'] + key['w'] and \
+            key['y'] <= c.y_pos <= key['y'] + key['h']:
+            return (name, key)
+    return None
+
 def lockScreen():
     loginPF = CDLL('/System/Library/PrivateFrameworks/login.framework/Versions/Current/login')
     result = loginPF.SACLockScreenImmediate()
