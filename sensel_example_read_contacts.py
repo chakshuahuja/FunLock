@@ -32,6 +32,49 @@ import sensel, json
 
 exit_requested = False;
 
+def compare(file1, test):
+    print('***************************************************************')
+    train = json.loads(open(file1).read())
+    key_maps = {}
+    i = 0
+    for k, v in train.items():
+        if k in key_maps.keys():
+            continue
+        key_maps[k] = i
+        i = i + 1
+
+    for k, v in test.items():
+        if k in key_maps.keys():
+            continue
+        key_maps[k] = i
+        i = i + 1
+
+    train_points = []
+    test_points = []
+    train_avg, test_avg = {}, {}
+    for k,v in train.items():
+        if train != {}:
+            avg = sum(v)/len(v)
+            train_avg[k] = avg
+            train_points.append((key_maps[k], avg))
+    print(train_avg)
+    for k,v in test.items():
+        if test != {}:
+            avg = sum(v)/len(v)
+            test_avg[k] = avg
+            test_points.append((key_maps[k], avg))
+    print(test_avg)
+
+    result = {}
+    for k in train.keys():
+        if k not in test.keys():
+            continue
+        if (test_avg[k] <= (train_avg[k] + 20)) and (test_avg[k] >= (train_avg[k]-20)):
+            result[k] = True
+        else:
+            result[k] = False
+    return sum(result.values())/float(len(result.values()))
+
 def contactToKey(c, KEYMAP):
     for name, key in KEYMAP.items():
         if key['x'] <= c.x_pos <= key['x'] + key['w'] and \
